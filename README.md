@@ -41,9 +41,11 @@ Without an API key the AI features return clearly-labelled demo output; add
 ## Deploy it live — free, no credit card
 
 The app is built to run on free serverless tiers: persistence degrades to
-in-memory when the filesystem is read-only, and scheduling works via a Vercel
-Cron (`vercel.json`) **plus** an opportunistic request-time sweep, so scheduled
-posts still publish even with no background worker.
+in-memory when the filesystem is read-only, and scheduling works primarily via
+an opportunistic request-time sweep (scheduled posts publish whenever anyone
+opens the app), backed by a once-a-day Vercel Cron (`vercel.json`). The cron is
+set to daily (`0 0 * * *`) because Vercel's free Hobby tier only allows daily
+cron jobs — the request-time sweep covers the gaps, so no paid plan is needed.
 
 ### Option A — Vercel (recommended, ~2 min)
 1. Push this repo to GitHub (already done if you're reading this there).
