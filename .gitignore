@@ -19,6 +19,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# local json data store
+/.data
+
 # env files
 .env
 .env*.local

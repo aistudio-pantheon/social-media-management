@@ -1,5 +1,6 @@
-import { Sparkles, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import AiInsight from "@/components/AiInsight";
 import { competitors } from "@/lib/mockData";
 import { formatNumber } from "@/lib/ui";
 
@@ -17,20 +18,11 @@ export default function CompetitorsPage() {
 
       <div className="space-y-6 p-8">
         {/* AI competitive summary */}
-        <div className="card flex items-start gap-3 border-brand-200 bg-brand-50 p-5">
-          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
-            <Sparkles size={16} />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-brand-700">This week vs. competitors</p>
-            <p className="mt-0.5 text-sm text-ink-700">
-              You have the <strong>highest engagement rate (5.3%)</strong> in your set despite posting
-              less often than Trendline. Trendline is growing fastest (+3.4%) by posting 12×/week —
-              their Reels are driving it. Opportunity: you win on quality, so increasing cadence to
-              9–10 posts/week could close the growth gap without hurting engagement.
-            </p>
-          </div>
-        </div>
+        <AiInsight
+          endpoint="/api/ai/competitor"
+          title="This week vs. competitors"
+          initial="You have the highest engagement rate (5.3%) in your set despite posting less often than Trendline. Trendline is growing fastest (+3.4%) by posting 12×/week — their Reels are driving it. Opportunity: lift cadence to 9–10 posts/week to close the growth gap without hurting engagement."
+        />
 
         {/* Share of voice */}
         <div className="card p-5">

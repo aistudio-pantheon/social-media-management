@@ -1,26 +1,31 @@
 import PageHeader from "@/components/PageHeader";
-import { posts } from "@/lib/mockData";
+import { getPosts } from "@/lib/store";
 import { PlatformBadge, StatusBadge } from "@/lib/ui";
+
+export const dynamic = "force-dynamic";
 
 const HOURS_LABEL = "Best time to post: 1:00 PM & 7:00 PM (from your engagement history)";
 
-// Build a simple 7-day strip starting "today" (fixed ref date for the demo).
-const REF = new Date("2026-06-26T00:00:00Z");
-const days = Array.from({ length: 7 }, (_, i) => {
-  const d = new Date(REF);
-  d.setUTCDate(REF.getUTCDate() + i);
-  return d;
-});
-
 export default function CalendarPage() {
+  const posts = getPosts();
+
+  // Build a 7-day strip starting today.
+  const REF = new Date();
+  REF.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(REF);
+    d.setDate(REF.getDate() + i);
+    return d;
+  });
+
   const byDay = (d: Date) =>
     posts.filter((p) => {
       if (!p.scheduledAt) return false;
       const s = new Date(p.scheduledAt);
       return (
-        s.getUTCFullYear() === d.getUTCFullYear() &&
-        s.getUTCMonth() === d.getUTCMonth() &&
-        s.getUTCDate() === d.getUTCDate()
+        s.getFullYear() === d.getFullYear() &&
+        s.getMonth() === d.getMonth() &&
+        s.getDate() === d.getDate()
       );
     });
 
@@ -47,7 +52,7 @@ export default function CalendarPage() {
                     {d.toLocaleDateString(undefined, { weekday: "short" })}
                   </span>
                   <span className={`text-sm font-semibold ${isToday ? "text-brand-600" : ""}`}>
-                    {d.getUTCDate()}
+                    {d.getDate()}
                   </span>
                 </div>
                 <div className="space-y-2">

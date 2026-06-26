@@ -19,18 +19,16 @@ export async function POST(req: Request) {
   }
 
   try {
-    const captions = await generateCaptions({
+    const result = await generateCaptions({
       topic: body.topic,
       platforms: body.platforms ?? [],
       tone: body.tone,
       includeHashtags: body.includeHashtags ?? true,
       variations: body.variations ?? 3,
     });
-    return NextResponse.json({ captions });
+    return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";
-    // Surface the friendly "missing API key" message to the client.
-    const status = message.includes("ANTHROPIC_API_KEY") ? 503 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

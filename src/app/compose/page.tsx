@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Check, Calendar, Send } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { accounts } from "@/lib/mockData";
 import { platformMeta } from "@/lib/ui";
-import type { Platform } from "@/lib/types";
+import type { Platform, SocialAccount } from "@/lib/types";
 
 const TONES = ["Friendly", "Professional", "Playful", "Bold", "Inspirational"];
 
 export default function ComposePage() {
+  const router = useRouter();
   const [content, setContent] = useState("");
   const [selected, setSelected] = useState<Platform[]>(["instagram"]);
   const [topic, setTopic] = useState("");
@@ -18,6 +19,18 @@ export default function ComposePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [demo, setDemo] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [saving, setSaving] = useState<null | string>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+
+  useEffect(() => {
+    fetch("/api/accounts")
+      .then((r) => r.json())
+      .then((d) => setAccounts(d.accounts ?? []))
+      .catch(() => setAccounts([]));
+  }, []);
 
   const togglePlatform = (p: Platform) =>
     setSelected((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -41,10 +54,54 @@ export default function ComposePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed");
       setSuggestions(data.captions ?? []);
+      setDemo(Boolean(data.demo));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function submit(action: "draft" | "schedule" | "publish") {
+    if (!content.trim()) {
+      setError("Write something to post first.");
+      return;
+    }
+    if (selected.length === 0) {
+      setError("Pick at least one platform.");
+      return;
+    }
+    if (action === "schedule" && !scheduleAt) {
+      setError("Pick a date & time to schedule.");
+      return;
+    }
+    setSaving(action);
+    setError(null);
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          platforms: selected,
+          action,
+          scheduledAt: action === "schedule" ? new Date(scheduleAt).toISOString() : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save");
+      const verb =
+        action === "draft" ? "Draft saved" : action === "schedule" ? "Scheduled" : "Published";
+      setFlash(`${verb} ✓`);
+      setContent("");
+      setSuggestions([]);
+      setScheduleAt("");
+      router.refresh();
+      if (action !== "draft") setTimeout(() => router.push("/calendar"), 700);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSaving(null);
     }
   }
 
@@ -96,18 +153,57 @@ export default function ComposePage() {
               placeholder="What do you want to share?"
               className="w-full resize-none rounded-lg border border-ink-200 p-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs text-ink-500">{content.length} characters</span>
-              <div className="flex gap-2">
-                <button className="btn-ghost border border-ink-200">Save draft</button>
-                <button className="btn-ghost border border-ink-200">
-                  <Calendar size={16} /> Schedule
+              <div className="flex items-center gap-2">
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                  className="rounded-lg border border-ink-200 px-2 py-1.5 text-xs text-ink-600"
+                />
+                <button
+                  onClick={() => submit("draft")}
+                  disabled={saving !== null}
+                  className="btn-ghost border border-ink-200"
+                >
+                  {saving === "draft" ? <Loader2 size={16} className="animate-spin" /> : null}
+                  Save draft
                 </button>
-                <button className="btn-primary">
-                  <Send size={16} /> Publish
+                <button
+                  onClick={() => submit("schedule")}
+                  disabled={saving !== null}
+                  className="btn-ghost border border-ink-200"
+                >
+                  {saving === "schedule" ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Calendar size={16} />
+                  )}
+                  Schedule
+                </button>
+                <button
+                  onClick={() => submit("publish")}
+                  disabled={saving !== null}
+                  className="btn-primary"
+                >
+                  {saving === "publish" ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Send size={16} />
+                  )}
+                  Publish now
                 </button>
               </div>
             </div>
+            {flash && (
+              <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+                {flash}
+              </p>
+            )}
+            {error && (
+              <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+            )}
           </div>
         </div>
 
@@ -169,8 +265,10 @@ export default function ComposePage() {
                 {loading ? "Generating…" : "Generate captions"}
               </button>
 
-              {error && (
-                <p className="rounded-lg bg-red-50 p-3 text-xs text-red-700">{error}</p>
+              {demo && suggestions.length > 0 && (
+                <p className="rounded-lg bg-amber-50 p-2 text-[11px] text-amber-700">
+                  Demo captions — add ANTHROPIC_API_KEY for real Claude generation.
+                </p>
               )}
 
               <div className="space-y-2">
