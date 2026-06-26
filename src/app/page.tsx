@@ -4,11 +4,13 @@ import PageHeader from "@/components/PageHeader";
 import ConnectAccount from "@/components/ConnectAccount";
 import { getAccounts, getPosts } from "@/lib/store";
 import { gatewayMode } from "@/lib/gateway";
+import { sweepDuePosts } from "@/lib/scheduler";
 import { PlatformBadge, StatusBadge, formatNumber } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await sweepDuePosts();
   const accounts = getAccounts();
   const posts = getPosts();
   const mode = gatewayMode();

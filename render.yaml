@@ -1,0 +1,16 @@
+# Alternative free host. Render's free web service keeps the Node server
+# alive, so the in-process scheduler (instrumentation.ts) runs continuously —
+# no cron needed. Push this repo, then "New + → Blueprint" on render.com.
+services:
+  - type: web
+    name: socialyze
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Add your key in the Render dashboard to enable real Claude AI.
+      - key: ANTHROPIC_API_KEY
+        sync: false

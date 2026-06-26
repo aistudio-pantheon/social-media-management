@@ -40,3 +40,18 @@ export async function runScheduler(nowIso: string): Promise<{ published: string[
 
   return { published };
 }
+
+// Lightweight opportunistic sweep: called on normal requests so that, even on
+// serverless hosts with no background timer or cron, due posts publish the
+// next time anyone touches the app. Throttled to once every 20s per instance.
+let lastSweep = 0;
+export async function sweepDuePosts(): Promise<void> {
+  const now = Date.now();
+  if (now - lastSweep < 20_000) return;
+  lastSweep = now;
+  try {
+    await runScheduler(new Date(now).toISOString());
+  } catch {
+    /* never let the sweep break a request */
+  }
+}

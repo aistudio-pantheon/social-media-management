@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { getPosts, createPost } from "@/lib/store";
 import { publishPost } from "@/lib/gateway";
+import { sweepDuePosts } from "@/lib/scheduler";
 import type { Platform } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  await sweepDuePosts();
   return NextResponse.json({ posts: getPosts() });
 }
 

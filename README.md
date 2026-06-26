@@ -35,8 +35,42 @@ cp .env.example .env.local      # add your ANTHROPIC_API_KEY
 npm run dev                     # http://localhost:3000
 ```
 
-Without an API key the UI runs on mock data; only the AI caption generation
-needs `ANTHROPIC_API_KEY`.
+Without an API key the AI features return clearly-labelled demo output; add
+`ANTHROPIC_API_KEY` to switch them to real Claude.
+
+## Deploy it live — free, no credit card
+
+The app is built to run on free serverless tiers: persistence degrades to
+in-memory when the filesystem is read-only, and scheduling works via a Vercel
+Cron (`vercel.json`) **plus** an opportunistic request-time sweep, so scheduled
+posts still publish even with no background worker.
+
+### Option A — Vercel (recommended, ~2 min)
+1. Push this repo to GitHub (already done if you're reading this there).
+2. Go to **[vercel.com/new](https://vercel.com/new)**, sign in with GitHub (free, no card).
+3. **Import** this repository → **Deploy**. That's it — you get a public
+   `https://<your-app>.vercel.app` URL.
+4. (Optional) In **Settings → Environment Variables**, add `ANTHROPIC_API_KEY`
+   to turn on real Claude AI, then redeploy.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/aistudio-pantheon/social-media-management)
+
+### Option B — Render (free, keeps the live scheduler running)
+A `render.yaml` blueprint is included. On **[render.com](https://render.com)**:
+New + → **Blueprint** → pick this repo → Apply. Render's free web service stays
+alive, so the in-process scheduler runs continuously (no cron needed).
+
+> **Free-tier note:** without a database, data resets on a cold start. To make
+> it permanent for free, add a free Postgres (Neon / Supabase) and set
+> `DATABASE_URL` — the store's access functions in `src/lib/store.ts` are the
+> only thing to swap.
+
+### Going fully live (real posting)
+Sandbox mode publishes to a simulator so everything works today. To post for
+real, register a developer app on each network (Meta, X, LinkedIn), pass their
+review, and add the OAuth secrets from `.env.example` to your host's
+environment variables. The gateway (`src/lib/gateway.ts`) flips that platform
+to live automatically — no code change.
 
 ## Architecture
 

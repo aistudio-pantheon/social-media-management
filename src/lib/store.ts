@@ -19,6 +19,11 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
 
 let cache: DB | null = null;
+// Set to false the first time a disk write fails (e.g. read-only serverless
+// filesystem like Vercel). After that we run purely in-memory, seeded from
+// the demo data — the app stays fully live and free, data just resets on a
+// cold start. Add a DATABASE_URL-backed store for durable persistence.
+let diskWritable = true;
 
 function load(): DB {
   if (cache) return cache;
@@ -26,7 +31,7 @@ function load(): DB {
     const raw = fs.readFileSync(DB_PATH, "utf8");
     cache = JSON.parse(raw) as DB;
   } catch {
-    // First run — seed from the demo data.
+    // First run (or no readable file) — seed from the demo data.
     cache = { accounts: [...seedAccounts], posts: [...seedPosts] };
     persist();
   }
@@ -34,9 +39,14 @@ function load(): DB {
 }
 
 function persist() {
-  if (!cache) return;
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DB_PATH, JSON.stringify(cache, null, 2), "utf8");
+  if (!cache || !diskWritable) return;
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(DB_PATH, JSON.stringify(cache, null, 2), "utf8");
+  } catch {
+    // Read-only filesystem — degrade gracefully to in-memory only.
+    diskWritable = false;
+  }
 }
 
 function id(prefix: string): string {

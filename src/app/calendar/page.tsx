@@ -1,12 +1,14 @@
 import PageHeader from "@/components/PageHeader";
 import { getPosts } from "@/lib/store";
+import { sweepDuePosts } from "@/lib/scheduler";
 import { PlatformBadge, StatusBadge } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
 const HOURS_LABEL = "Best time to post: 1:00 PM & 7:00 PM (from your engagement history)";
 
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  await sweepDuePosts();
   const posts = getPosts();
 
   // Build a 7-day strip starting today.

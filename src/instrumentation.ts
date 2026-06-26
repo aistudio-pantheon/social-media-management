@@ -3,6 +3,10 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // On serverless platforms (Vercel) lambdas don't stay alive, so a timer is
+  // pointless — a cron hitting /api/scheduler/tick handles it there instead
+  // (see vercel.json). Only run the in-process loop on long-lived hosts.
+  if (process.env.VERCEL) return;
 
   const { runScheduler } = await import("./lib/scheduler");
 
